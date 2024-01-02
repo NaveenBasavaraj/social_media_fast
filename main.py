@@ -1,5 +1,5 @@
 # Import the FastAPI module
-from fastapi import FastAPI
+from fastapi import FastAPI, Response, status, HTTPException
 from fastapi import Body
 from pydantic import BaseModel
 from typing import Optional
@@ -44,7 +44,7 @@ def create_posts(payload: dict = Body(...)):
 
 
 @app.post("/createposts/")
-def create_posts_pydantic(new_post: Post):
+def create_posts_pydantic(new_post: Post, response: Response):
     """
     Create a new post using Pydantic model.
 
@@ -57,6 +57,7 @@ def create_posts_pydantic(new_post: Post):
     post_dict = new_post.model_dump()
     post_dict['id'] = randrange(3,100)
     my_posts.append(post_dict)
+    response.status_code = status.HTTP_201_CREATED
     return {"data": new_post}
 
 @app.get("/posts/latest")
@@ -67,9 +68,25 @@ def get_latest_post():
     return {"data": my_posts[-1]}
 
 @app.get("/posts/{id}")
-def get_post(id: int):
+def get_post(id: int, response: Response):
     """
     This function handles the "/posts/{id}" URL and returns a JSON response with data.
     """
     post = [post for post in my_posts if post['id'] == id]
+    if not post:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Post with id {id} not found")
+        # response.status_code = status.HTTP_404_NOT_FOUND
+        # return {"message": f"Post with id {id} not found"}
     return {"data": post}
+
+@app.delete("/posts/{id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_post(id: int, response: Response):
+    """
+    This function deletes a post with the given id.
+    """
+    post = [post for post in my_posts if post['id'] == id]
+    if not post:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Post with id {id} not found")
+    response.status_code = status.HTTP_204_NO_CONTENT
+    my_posts.remove(post[0])
+    return {"message": f"Post with id {id} deleted successfully"}
