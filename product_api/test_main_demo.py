@@ -1,5 +1,5 @@
 from fastapi.testclient import TestClient
-from main_demo import app, Profile
+from product_api.main_demo import app, Profile
 
 
 client = TestClient(app)
